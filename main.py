@@ -1,0 +1,79 @@
+from telebot import *
+import config
+import openai
+from psycopg2 import *
+import json
+import time
+
+bot = TeleBot(config.TOKEN)
+openai.api_key = config.TOKEN_GPT
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, 'Плотный салам')
+
+    try:
+        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                     port=config.port) as db:
+            cur = db.cursor()
+            cur.execute(f'''CREATE TABLE "{message.chat.id}" ({message.chat.first_name.lower()} JSONB)''')
+    except:
+        pass
+
+    with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                 port=config.port) as db:
+        cur = db.cursor()
+        cur.execute(f'''DELETE FROM "{message.chat.id}"''')
+
+
+@bot.message_handler(content_types=['text'])
+def chat(message):
+    try:
+        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                     port=config.port) as db:
+            cur = db.cursor()
+            cur.execute(f'''CREATE TABLE "{message.chat.id}" ({message.chat.first_name.lower()} JSONB)''')
+    except:
+        pass
+
+    messages = [{"role": "system",
+                 "content": "Ты - виртуальный помощник по имени Бернард. Ты должен общаться с собеседником на ВЫ, а не на ТЫ"}]
+    m1 = bot.send_message(message.chat.id, 'Обработка запроса...')
+    content = message.text
+    json_from_user = json.dumps({"role": "user", "content": content})
+    with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                 port=config.port) as db:
+        cur = db.cursor()
+        cur.execute(
+            f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_user}')''')
+        cur.execute(f'''SELECT {message.chat.first_name.lower()} FROM "{message.chat.id}"''')
+        a = cur.fetchall()
+        for i in a:
+            for j in i:
+                messages.append(j)
+    try:
+        completion = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+
+        response = completion.choices[0].message.content
+        json_from_assistant = json.dumps({"role": "assistant", "content": response})
+        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                     port=config.port) as db:
+            cur = db.cursor()
+            cur.execute(
+                f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_assistant}')''')
+
+        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id, text=f'{response}')
+    except:
+        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
+                              text='Я упал, подождите пока я не сообщу вам о готовности, либо перезапустите меня, но тогда я обо всем забуду')
+        time.sleep(10)
+        bot.send_message(message.chat.id, 'Все, я поднялся')
+
+    print(f'конец: {messages}\n')
+
+
+bot.polling(True)
