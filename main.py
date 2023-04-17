@@ -67,11 +67,40 @@ def chat(message):
                 f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_assistant}')''')
 
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id, text=f'{response}')
-    except:
+
+    except openai.error.RateLimitError:
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                              text='Я упал, подождите пока я не сообщу вам о готовности, либо перезапустите меня, но тогда я обо всем забуду')
+                              text='Я упал, подождите пока я не сообщу вам о своей готовности')
         time.sleep(10)
-        bot.send_message(message.chat.id, 'Все, я поднялся')
+        bot.send_message(message.chat.id, 'Все, я поднялся, повторите свой вопрос')
+
+    except openai.error.InvalidRequestError:
+        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                     port=config.port) as db:
+            cur = db.cursor()
+            cur.execute(f'''DELETE FROM "{message.chat.id}"''')
+
+        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
+                              text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше')
+        reload = bot.send_message(message.chat.id, 'Перезагрузка: <b>0%</b>', parse_mode='HTML')
+        time.sleep(0.2)
+        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
+                              text='Перезагрузка: <b>20%</b>', parse_mode='HTML')
+        time.sleep(0.2)
+        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
+                              text='Перезагрузка: <b>40%</b>', parse_mode='HTML')
+        time.sleep(0.2)
+        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
+                              text='Перезагрузка: <b>60%</b>', parse_mode='HTML')
+        time.sleep(0.2)
+        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
+                              text='Перезагрузка: <b>80%</b>', parse_mode='HTML')
+        time.sleep(0.2)
+        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
+                              text='Перезагрузка: <b>100%</b>', parse_mode='HTML')
+        time.sleep(0.2)
+        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
+                              text='Здравствуйте, как я могу вам помочь?')
 
     print(f'конец: {messages}\n')
 
