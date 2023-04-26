@@ -74,7 +74,7 @@ def chat(message):
         time.sleep(10)
         bot.send_message(message.chat.id, 'Все, я поднялся, повторите свой вопрос')
 
-    except openai.error.InvalidRequestError:
+    except: #openai.error.InvalidRequestError:
         with connect(user=config.user, password=config.password, host=config.host, database=config.database,
                      port=config.port) as db:
             cur = db.cursor()
