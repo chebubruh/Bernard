@@ -59,6 +59,8 @@ def chat(message):
         )
 
         response = completion.choices[0].message.content
+        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id, text=f'{response}')
+        
         json_from_assistant = json.dumps({"role": "assistant", "content": response})
         with connect(user=config.user, password=config.password, host=config.host, database=config.database,
                      port=config.port) as db:
@@ -66,7 +68,6 @@ def chat(message):
             cur.execute(
                 f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_assistant}')''')
 
-        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id, text=f'{response}')
 
     except openai.error.RateLimitError:
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
@@ -102,7 +103,7 @@ def chat(message):
         bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
                               text='Здравствуйте, как я могу вам помочь?')
 
-    print(f'конец: {messages}\n')
+    print(f'{messages}\n')
 
 
 bot.polling(True)
