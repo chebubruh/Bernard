@@ -47,6 +47,10 @@ def chat(message):
         cur = db.cursor()
         cur.execute(
             f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_user}')''')
+
+    with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                 port=config.port) as db:
+        cur = db.cursor()
         cur.execute(f'''SELECT {message.chat.first_name.lower()} FROM "{message.chat.id}"''')
         a = cur.fetchall()
         for i in a:
