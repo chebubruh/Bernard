@@ -17,7 +17,7 @@ def start(message):
         with connect(user=config.user, password=config.password, host=config.host, database=config.database,
                      port=config.port) as db:
             cur = db.cursor()
-            cur.execute(f'''CREATE TABLE "{message.chat.id}" ({message.chat.first_name.lower()} JSONB)''')
+            cur.execute(f'''CREATE TABLE "{message.chat.id}" (id serial PRIMARY KEY, {message.chat.first_name.lower()} JSONB)''')
     except:
         pass
 
@@ -33,7 +33,7 @@ def chat(message):
         with connect(user=config.user, password=config.password, host=config.host, database=config.database,
                      port=config.port) as db:
             cur = db.cursor()
-            cur.execute(f'''CREATE TABLE "{message.chat.id}" ({message.chat.first_name.lower()} JSONB)''')
+            cur.execute(f'''CREATE TABLE "{message.chat.id}" (id serial PRIMARY KEY, {message.chat.first_name.lower()} JSONB)''')
     except:
         pass
 
