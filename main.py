@@ -77,10 +77,10 @@ def chat(message):
     except openai.error.RateLimitError:
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
                               text='Я упал, подождите пока я не сообщу вам о своей готовности')
-        time.sleep(10)
+        time.sleep(20)
         bot.send_message(message.chat.id, 'Все, я поднялся, повторите свой вопрос')
 
-    except:  # openai.error.InvalidRequestError:
+    except openai.error.InvalidRequestError:
         with connect(user=config.user, password=config.password, host=config.host, database=config.database,
                      port=config.port) as db:
             cur = db.cursor()
@@ -107,6 +107,15 @@ def chat(message):
         time.sleep(0.2)
         bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
                               text='Здравствуйте, как я могу вам помочь?')
+
+    except:
+        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
+                     port=config.port) as db:
+            cur = db.cursor()
+            cur.execute(f'''DELETE FROM "{message.chat.id}"''')
+
+        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
+                              text='Произошла какая-то неизвестная ошибка, откатываюсь к заводским настройкам')
 
     print(f'{messages}\n')
 
