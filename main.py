@@ -9,7 +9,7 @@ bot = TeleBot(config.TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, 'Плотный салам')
+    bot.send_message(message.chat.id, 'Здравствуйте! Как я могу быть полезен?')
 
     try:
         sql.create_table(message.chat.id,
