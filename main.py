@@ -9,7 +9,7 @@ bot = TeleBot(config.TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, 'Здравствуйте! Как я могу быть полезен?')
+    bot.send_message(message.chat.id, 'К вашим услугам, сэр!')
 
     try:
         sql.create_table(message.chat.id,
@@ -29,7 +29,7 @@ def chat(message):
         pass
 
     messages = [{"role": "system",
-                 "content": "Ты интеллигентный, виртуальный помощник по имени Бернард"}]  # список для контекста
+                 "content": "Ты интеллигентный, виртуальный помощник по имени Бернард. Ты должен общаться только на ВЫ"}]  # список для контекста
 
     m1 = bot.send_message(message.chat.id, 'Обработка запроса...')  # Отправка сообщения о начале обработки запроса
     content = message.text
