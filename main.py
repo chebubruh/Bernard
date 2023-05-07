@@ -13,7 +13,7 @@ def start(message):
 
     try:
         sql.create_table(message.chat.id,
-                         message.chat.first_name)  # Попытка создания таблицы, если она еще не существует
+                         message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
     except:
         pass
 
@@ -24,7 +24,7 @@ def start(message):
 def chat(message):
     try:
         sql.create_table(message.chat.id,
-                         message.chat.first_name)  # Попытка создания таблицы, если она еще не существует
+                         message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
     except:
         pass
 
@@ -34,10 +34,10 @@ def chat(message):
     m1 = bot.send_message(message.chat.id, 'Обработка запроса...')  # Отправка сообщения о начале обработки запроса
     content = message.text
     json_from_user = json.dumps({"role": "user", "content": content})  # Преобразование текста пользователя в JSON
-    sql.insert_into_table_values(message.chat.id, message.chat.first_name,
+    sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
                                  json_from_user)  # Вставка сообщения пользователя в таблицу
 
-    for i in sql.select_data(message.chat.first_name, message.chat.id):
+    for i in sql.select_data(message.chat.first_name.split()[0], message.chat.id):
         for j in i:
             messages.append(j)  # Получение предыдущих сообщений из таблицы и добавление их в список
 
@@ -66,7 +66,7 @@ def chat(message):
 
         response = completion.choices[0].message.content  # Получение ответа от модели
         json_from_assistant = json.dumps({"role": "assistant", "content": response})  # Преобразование ответа в JSON
-        sql.insert_into_table_values(message.chat.id, message.chat.first_name,
+        sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
                                      json_from_assistant)  # Вставка ответа ассистента в таблицу
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
                               text=f'{response}')  # Редактирование сообщения с ответом
