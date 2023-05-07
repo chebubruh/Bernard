@@ -1,9 +1,9 @@
 from telebot import *
 import config
 import openai
-from psycopg2 import *
 import json
 import time
+import sql
 
 bot = TeleBot(config.TOKEN)
 openai.api_key = config.TOKEN_GPT
@@ -14,28 +14,17 @@ def start(message):
     bot.send_message(message.chat.id, 'Плотный салам')
 
     try:
-        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                     port=config.port) as db:
-            cur = db.cursor()
-            cur.execute(
-                f'''CREATE TABLE "{message.chat.id}" (id serial PRIMARY KEY, {message.chat.first_name.lower()} JSONB)''')
+        sql.create_table(message.chat.id, message.chat.first_name)
     except:
         pass
 
-    with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                 port=config.port) as db:
-        cur = db.cursor()
-        cur.execute(f'''DELETE FROM "{message.chat.id}"''')
+    sql.table_clearing(message.chat.id)
 
 
 @bot.message_handler(content_types=['text'])
 def chat(message):
     try:
-        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                     port=config.port) as db:
-            cur = db.cursor()
-            cur.execute(
-                f'''CREATE TABLE "{message.chat.id}" (id serial PRIMARY KEY, {message.chat.first_name.lower()} JSONB)''')
+        sql.create_table(message.chat.id, message.chat.first_name)
     except:
         pass
 
@@ -44,20 +33,11 @@ def chat(message):
     m1 = bot.send_message(message.chat.id, 'Обработка запроса...')
     content = message.text
     json_from_user = json.dumps({"role": "user", "content": content})
-    with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                 port=config.port) as db:
-        cur = db.cursor()
-        cur.execute(
-            f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_user}')''')
+    sql.insert_into_table_values(message.chat.id, message.chat.first_name, json_from_user)
 
-    with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                 port=config.port) as db:
-        cur = db.cursor()
-        cur.execute(f'''SELECT {message.chat.first_name.lower()} FROM "{message.chat.id}"''')
-        a = cur.fetchall()
-        for i in a:
-            for j in i:
-                messages.append(j)
+    for i in sql.select_data(message.chat.first_name, message.chat.id):
+        for j in i:
+            messages.append(j)
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -66,11 +46,7 @@ def chat(message):
 
         response = completion.choices[0].message.content
         json_from_assistant = json.dumps({"role": "assistant", "content": response})
-        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                     port=config.port) as db:
-            cur = db.cursor()
-            cur.execute(
-                f'''INSERT INTO "{message.chat.id}" ({message.chat.first_name.lower()}) VALUES ('{json_from_assistant}')''')
+        sql.insert_into_table_values(message.chat.id, message.chat.first_name, json_from_assistant)
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id, text=f'{response}')
 
 
@@ -81,10 +57,7 @@ def chat(message):
         bot.send_message(message.chat.id, 'Все, я поднялся, повторите свой вопрос')
 
     except openai.error.InvalidRequestError:
-        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                     port=config.port) as db:
-            cur = db.cursor()
-            cur.execute(f'''DELETE FROM "{message.chat.id}"''')
+        sql.table_clearing(message.chat.id)
 
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
                               text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше')
@@ -109,10 +82,7 @@ def chat(message):
                               text='Здравствуйте, как я могу вам помочь?')
 
     except:
-        with connect(user=config.user, password=config.password, host=config.host, database=config.database,
-                     port=config.port) as db:
-            cur = db.cursor()
-            cur.execute(f'''DELETE FROM "{message.chat.id}"''')
+        sql.table_clearing(message.chat.id)
 
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
                               text='Произошла какая-то неизвестная ошибка, откатываюсь к заводским настройкам')
