@@ -2,11 +2,9 @@ from telebot import *
 import config
 import openai
 import json
-import time
 import sql
 
 bot = TeleBot(config.TOKEN)
-openai.api_key = config.TOKEN_GPT
 
 
 @bot.message_handler(commands=['start'])
@@ -14,80 +12,66 @@ def start(message):
     bot.send_message(message.chat.id, 'Плотный салам')
 
     try:
-        sql.create_table(message.chat.id, message.chat.first_name)
+        sql.create_table(message.chat.id,
+                         message.chat.first_name)  # Попытка создания таблицы, если она еще не существует
     except:
         pass
 
-    sql.table_clearing(message.chat.id)
+    sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
 
 
 @bot.message_handler(content_types=['text'])
 def chat(message):
     try:
-        sql.create_table(message.chat.id, message.chat.first_name)
+        sql.create_table(message.chat.id,
+                         message.chat.first_name)  # Попытка создания таблицы, если она еще не существует
     except:
         pass
 
     messages = [{"role": "system",
-                 "content": "Ты - виртуальный помощник по имени Бернард. Ты должен общаться с собеседником на ВЫ, а не на ТЫ"}]
-    m1 = bot.send_message(message.chat.id, 'Обработка запроса...')
+                 "content": "Ты интеллигентный, виртуальный помощник по имени Бернард"}]  # список для контекста
+
+    m1 = bot.send_message(message.chat.id, 'Обработка запроса...')  # Отправка сообщения о начале обработки запроса
     content = message.text
-    json_from_user = json.dumps({"role": "user", "content": content})
-    sql.insert_into_table_values(message.chat.id, message.chat.first_name, json_from_user)
+    json_from_user = json.dumps({"role": "user", "content": content})  # Преобразование текста пользователя в JSON
+    sql.insert_into_table_values(message.chat.id, message.chat.first_name,
+                                 json_from_user)  # Вставка сообщения пользователя в таблицу
 
     for i in sql.select_data(message.chat.first_name, message.chat.id):
         for j in i:
-            messages.append(j)
-    try:
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages
-        )
+            messages.append(j)  # Получение предыдущих сообщений из таблицы и добавление их в список
 
-        response = completion.choices[0].message.content
-        json_from_assistant = json.dumps({"role": "assistant", "content": response})
-        sql.insert_into_table_values(message.chat.id, message.chat.first_name, json_from_assistant)
-        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id, text=f'{response}')
+    for token in config.TOKEN_GPT:
+        openai.api_key = token
 
+        try:
+            completion = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=messages
+            )  # Запрос к модели GPT-3.5 Turbo для получения ответа
+        except openai.error.AuthenticationError:
+            print("AuthenticationError")
+            continue
+        except openai.error.RateLimitError:
+            print("RateLimitError")
+            continue
+        except openai.error.InvalidRequestError:
+            print("InvalidRequestError")
+            sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
+            bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
+                                  text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше.')  # Редактирование сообщения
+            bot.send_message(message.chat.id,
+                             'Пожалуйста, повторите свой запрос, но помните, что я не знаю, о чем мы говорили ранее.')  # Отправка сообщения
+            break
 
-    except openai.error.RateLimitError:
+        response = completion.choices[0].message.content  # Получение ответа от модели
+        json_from_assistant = json.dumps({"role": "assistant", "content": response})  # Преобразование ответа в JSON
+        sql.insert_into_table_values(message.chat.id, message.chat.first_name,
+                                     json_from_assistant)  # Вставка ответа ассистента в таблицу
         bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                              text='Я упал, подождите пока я не сообщу вам о своей готовности')
-        time.sleep(20)
-        bot.send_message(message.chat.id, 'Все, я поднялся, повторите свой вопрос')
-
-    except openai.error.InvalidRequestError:
-        sql.table_clearing(message.chat.id)
-
-        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                              text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше')
-        reload = bot.send_message(message.chat.id, 'Перезагрузка: <b>0%</b>', parse_mode='HTML')
-        time.sleep(0.2)
-        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
-                              text='Перезагрузка: <b>20%</b>', parse_mode='HTML')
-        time.sleep(0.2)
-        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
-                              text='Перезагрузка: <b>40%</b>', parse_mode='HTML')
-        time.sleep(0.2)
-        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
-                              text='Перезагрузка: <b>60%</b>', parse_mode='HTML')
-        time.sleep(0.2)
-        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
-                              text='Перезагрузка: <b>80%</b>', parse_mode='HTML')
-        time.sleep(0.2)
-        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
-                              text='Перезагрузка: <b>100%</b>', parse_mode='HTML')
-        time.sleep(0.2)
-        bot.edit_message_text(chat_id=reload.chat.id, message_id=reload.id,
-                              text='Здравствуйте, как я могу вам помочь?')
-
-    except:
-        sql.table_clearing(message.chat.id)
-
-        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                              text='Произошла какая-то неизвестная ошибка, откатываюсь к заводским настройкам')
-
-    print(f'{messages}\n')
+                              text=f'{response}')  # Редактирование сообщения с ответом
+        print(f'{messages}\n')
+        break
 
 
-bot.polling(True)
+bot.polling(True)  # Запуск бота для прослушивания сообщений
