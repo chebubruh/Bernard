@@ -1,5 +1,6 @@
 import config
 from psycopg2 import *
+from psycopg2.extensions import AsIs
 
 
 def create_table(chat_id, first_name):
@@ -7,7 +8,7 @@ def create_table(chat_id, first_name):
                  port=config.port) as db:
         cur = db.cursor()
         cur.execute(
-            f'''CREATE TABLE "{chat_id}" (id serial PRIMARY KEY, {first_name.lower()} JSONB)''')
+            '''CREATE TABLE "%s" (id serial PRIMARY KEY, %s JSONB)''', (AsIs(chat_id), AsIs(first_name.lower())))
 
 
 def table_clearing(chat_id):

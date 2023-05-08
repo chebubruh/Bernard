@@ -15,9 +15,7 @@ def start(message):
         sql.create_table(message.chat.id,
                          message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
     except:
-        pass
-
-    sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
+        sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
 
 
 @bot.message_handler(content_types=['text'])
