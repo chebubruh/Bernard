@@ -22,7 +22,7 @@ def insert_into_table_values(chat_id, first_name, values):
                  port=config.port) as db:
         cur = db.cursor()
         cur.execute(
-            f'''INSERT INTO "{chat_id}" ({first_name.lower()}) VALUES ('{values}')''')
+            f'''INSERT INTO "{chat_id}" ({first_name.lower()}) VALUES (%s)''', (values,))
 
 
 def select_data(first_name, chat_id):
