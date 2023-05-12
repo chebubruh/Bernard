@@ -30,6 +30,6 @@ def select_data(first_name, chat_id):
     with connect(user=config.user, password=config.password, host=config.host, database=config.database,
                  port=config.port) as db:
         cur = db.cursor()
-        cur.execute(f'''SELECT %s FROM "%s"''', (AsIs(first_name.lower()), AsIs(chat_id)))
+        cur.execute(f'''SELECT %s FROM "%s" ORDER BY id''', (AsIs(first_name.lower()), AsIs(chat_id)))
         a = cur.fetchall()
     return a
