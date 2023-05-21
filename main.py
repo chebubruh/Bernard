@@ -1,16 +1,18 @@
-from telebot import *
+from aiogram import *
+from aiogram.types import *
 import speech_to_text
 import config
 import openai
 import json
 import sql
 
-bot = TeleBot(config.TOKEN)
+bot = Bot(token=config.TOKEN)
+dp = Dispatcher(bot)
 
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.send_message(message.chat.id, 'К вашим услугам, сэр!')
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    await bot.send_message(chat_id=message.chat.id, text='К вашим услугам, сэр!')
 
     try:
         sql.create_table(message.chat.id,
@@ -19,8 +21,8 @@ def start(message):
         sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
 
 
-@bot.message_handler(content_types=['text'])
-def chat(message):
+@dp.message_handler(content_types=['text'])
+async def chat(message: types.Message):
     try:
         sql.create_table(message.chat.id,
                          message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
@@ -30,7 +32,8 @@ def chat(message):
     messages = [{"role": "system",
                  "content": "Ты интеллигентный, виртуальный помощник по имени Бернард. Ты должен общаться только на ВЫ"}]  # список для контекста
 
-    m1 = bot.send_message(message.chat.id, 'Обработка запроса...')  # Отправка сообщения о начале обработки запроса
+    m1 = await bot.send_message(chat_id=message.chat.id,
+                                text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
     content = message.text
     json_from_user = json.dumps({"role": "user", "content": content})  # Преобразование текста пользователя в JSON
     sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
@@ -57,10 +60,10 @@ def chat(message):
         except openai.error.InvalidRequestError:
             print("InvalidRequestError")
             sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
-            bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                                  text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше.')  # Редактирование сообщения
-            bot.send_message(message.chat.id,
-                             'Пожалуйста, повторите свой запрос, но помните, что я не знаю, о чем мы говорили ранее.')  # Отправка сообщения
+            await bot.edit_message_text(chat_id=message.chat.id, message_id=m1.message_id,
+                                        text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше.')  # Редактирование сообщения
+            await bot.send_message(chat_id=message.chat.id,
+                                   text='Пожалуйста, повторите свой запрос, но помните, что я не знаю, о чем мы говорили ранее.')  # Отправка сообщения
             break
 
         response = completion.choices[0].message.content  # Получение ответа от модели
