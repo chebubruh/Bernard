@@ -93,7 +93,7 @@ async def voice(message: types.Message):
     folder_name = "voices"
     if not os.path.exists(folder_name):
         os.mkdir(folder_name)
-    await bot.download_file(file_path, f"{folder_name}/voice_message.mp3")
+    await bot.download_file(file_path, f"{folder_name}/audio.ogg")
 
     m1 = await bot.send_message(chat_id=message.chat.id,
                                 text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
