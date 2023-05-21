@@ -1,10 +1,10 @@
 from aiogram import *
-from aiogram.types import *
 import speech_to_text
 import config
 import openai
 import json
 import sql
+import os
 
 bot = Bot(token=config.TOKEN)
 dp = Dispatcher(bot)
@@ -70,14 +70,14 @@ async def chat(message: types.Message):
         json_from_assistant = json.dumps({"role": "assistant", "content": response})  # Преобразование ответа в JSON
         sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
                                      json_from_assistant)  # Вставка ответа ассистента в таблицу
-        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                              text=f'{response}')  # Редактирование сообщения с ответом
+        await bot.edit_message_text(chat_id=message.chat.id, message_id=m1.message_id,
+                                    text=f'{response}')  # Редактирование сообщения с ответом
         print(f'{messages}\n')
         break
 
 
-@bot.message_handler(content_types=['voice'])
-def voice(message):
+@dp.message_handler(content_types=['voice'])
+async def voice(message: types.Message):
     try:
         sql.create_table(message.chat.id,
                          message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
@@ -87,16 +87,22 @@ def voice(message):
     messages = [{"role": "system",
                  "content": "Ты интеллигентный, виртуальный помощник по имени Бернард. Ты должен общаться только на ВЫ"}]  # список для контекста
 
-    file_info = bot.get_file(message.voice.file_id)
-    downloaded_file = bot.download_file(file_info.file_path)
+    file_id = message.voice.file_id
+    file = await bot.get_file(file_id)
+    file_path = file.file_path
+    folder_name = "voices"
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+    await bot.download_file(file_path, f"{folder_name}/voice_message.mp3")
 
-    m1 = bot.send_message(message.chat.id, 'Обработка запроса...')  # Отправка сообщения о начале обработки запроса
+    m1 = await bot.send_message(chat_id=message.chat.id,
+                                text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
 
     for token in config.TOKEN_GPT:
         openai.api_key = token
 
         try:
-            content = speech_to_text.voice_converter(downloaded_file)
+            content = speech_to_text.voice_converter()
             json_from_user = json.dumps(
                 {"role": "user", "content": content})  # Преобразование текста пользователя в JSON
             sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
@@ -119,20 +125,20 @@ def voice(message):
         except openai.error.InvalidRequestError:
             print("InvalidRequestError")
             sql.table_clearing(message.chat.id)  # Очистка таблицы от предыдущих данных
-            bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                                  text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше.')  # Редактирование сообщения
-            bot.send_message(message.chat.id,
-                             'Пожалуйста, повторите свой запрос, но помните, что я не знаю, о чем мы говорили ранее.')  # Отправка сообщения
+            await bot.edit_message_text(chat_id=message.chat.id, message_id=m1.message_id,
+                                        text='Упс, моя база данных переполнена. К сожалению мне придется стереть себе память, чтобы функицонировать дальше.')  # Редактирование сообщения
+            await bot.send_message(chat_id=message.chat.id,
+                                   text='Пожалуйста, повторите свой запрос, но помните, что я не знаю, о чем мы говорили ранее.')  # Отправка сообщения
             break
 
         response = completion.choices[0].message.content  # Получение ответа от модели
         json_from_assistant = json.dumps({"role": "assistant", "content": response})  # Преобразование ответа в JSON
         sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
                                      json_from_assistant)  # Вставка ответа ассистента в таблицу
-        bot.edit_message_text(chat_id=m1.chat.id, message_id=m1.id,
-                              text=f'{response}')  # Редактирование сообщения с ответом
+        await bot.edit_message_text(chat_id=message.chat.id, message_id=m1.message_id,
+                                    text=f'{response}')  # Редактирование сообщения с ответом
         print(f'{messages}\n')
         break
 
 
-bot.polling(True)  # Запуск бота для прослушивания сообщений
+executor.start_polling(dp)  # Запуск бота для прослушивания сообщений
