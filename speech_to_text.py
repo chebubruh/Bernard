@@ -1,4 +1,3 @@
-import telebot
 import os
 from pydub import AudioSegment
 import openai
@@ -24,7 +23,7 @@ def voice_converter():
             os.remove(file_mp3)
 
             return transcript.text
-        except telebot.apihelper.ApiTelegramException:
+        except:
             file_mp3 = "voices/audio.mp3"
             os.remove(file_mp3)
 
