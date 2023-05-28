@@ -33,7 +33,7 @@ async def chat(message: types.Message):
         pass
 
     messages = [{"role": "system",
-                 "content": "Ты интеллигентный, виртуальный помощник по имени Бернард. Ты должен общаться только на ВЫ"}]  # список для контекста
+                 "content": "Ты интеллигентный, вежливый виртуальный помощник по имени Бернард"}]  # список для контекста
 
     content = message.text
     json_from_user = json.dumps({"role": "user", "content": content})  # Преобразование текста пользователя в JSON
@@ -89,7 +89,7 @@ async def voice(message: types.Message):
         pass
 
     messages = [{"role": "system",
-                 "content": "Ты интеллигентный, виртуальный помощник по имени Бернард. Ты должен общаться только на ВЫ"}]  # список для контекста
+                 "content": "Ты интеллигентный, вежливый виртуальный помощник по имени Бернард"}]  # список для контекста
 
     file_id = message.voice.file_id
     file = await bot.get_file(file_id)
