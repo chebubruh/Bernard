@@ -23,6 +23,9 @@ async def start(message: types.Message):
 
 @dp.message_handler(content_types=['text'])
 async def chat(message: types.Message):
+    m1 = await bot.send_message(chat_id=message.chat.id,
+                                text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
+
     try:
         sql.create_table(message.chat.id,
                          message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
@@ -32,8 +35,6 @@ async def chat(message: types.Message):
     messages = [{"role": "system",
                  "content": "Ты интеллигентный, виртуальный помощник по имени Бернард. Ты должен общаться только на ВЫ"}]  # список для контекста
 
-    m1 = await bot.send_message(chat_id=message.chat.id,
-                                text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
     content = message.text
     json_from_user = json.dumps({"role": "user", "content": content})  # Преобразование текста пользователя в JSON
     sql.insert_into_table_values(message.chat.id, message.chat.first_name.split()[0],
@@ -78,6 +79,9 @@ async def chat(message: types.Message):
 
 @dp.message_handler(content_types=['voice'])
 async def voice(message: types.Message):
+    m1 = await bot.send_message(chat_id=message.chat.id,
+                                text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
+
     try:
         sql.create_table(message.chat.id,
                          message.chat.first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
@@ -94,9 +98,6 @@ async def voice(message: types.Message):
     if not os.path.exists(folder_name):
         os.mkdir(folder_name)
     await bot.download_file(file_path, f"{folder_name}/audio.ogg")
-
-    m1 = await bot.send_message(chat_id=message.chat.id,
-                                text='Обработка запроса...')  # Отправка сообщения о начале обработки запроса
 
     for token in config.TOKEN_GPT:
         openai.api_key = token
