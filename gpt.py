@@ -5,7 +5,7 @@ import json
 import sql
 
 
-async def aboba(chat_id, first_name, content):
+async def gpt(chat_id, first_name, content):
     try:
         await sql.create_table(chat_id, first_name.split()[0])  # Попытка создания таблицы, если она еще не существует
     except:
