@@ -1,5 +1,4 @@
 import openai_async
-import asyncio
 import config
 import openai
 import json
@@ -15,8 +14,8 @@ async def gpt(chat_id, first_name, content):  # content должен быть me
     messages = [{"role": "system",
                  "content": "Ты интеллигентный, вежливый виртуальный помощник по имени Бернард"}]  # список для контекста
 
-    json_from_user = await asyncio.to_thread(json.dumps, {"role": "user",
-                                                          "content": content})  # Преобразование текста пользователя в JSON
+    json_from_user = json.dumps({"role": "user", "content": content})  # Преобразование текста пользователя в JSON
+
     await sql.insert_into_table_values(chat_id, first_name.split()[0],
                                        json_from_user)  # Вставка сообщения пользователя в таблицу
 
@@ -50,8 +49,8 @@ async def gpt(chat_id, first_name, content):  # content должен быть me
             return "InvalidRequestError"
             break
 
-        json_from_assistant = await asyncio.to_thread(json.dumps, {"role": "assistant",
-                                                                   "content": response})  # Преобразование ответа в JSON
+        json_from_assistant = json.dumps({"role": "assistant", "content": response})  # Преобразование ответа в JSON
+
         await sql.insert_into_table_values(chat_id, first_name.split()[0],
                                            json_from_assistant)  # Вставка ответа ассистента в таблицу
         print(f'{messages}\n')
