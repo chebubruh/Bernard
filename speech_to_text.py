@@ -1,13 +1,14 @@
 import os
-from pydub import AudioSegment
+import ffmpeg
 import openai
 
 
 def voice_converter():
     try:
         # конвертация файла
-        ogg_audio = AudioSegment.from_file("voices/audio.ogg", format="ogg")
-        ogg_audio.export("voices/audio.mp3", format="mp3")
+        stream = ffmpeg.input("voices/audio.ogg")
+        stream = ffmpeg.output(stream, "voices/audio.mp3")
+        ffmpeg.run(stream)
 
         # удаление файла ogg
         file = "voices/audio.ogg"
