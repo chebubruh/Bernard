@@ -24,22 +24,26 @@ def voice_converter():
             os.remove(file_mp3)
 
             return transcript.text
-        except:
+        except Exception as ex:
             file_mp3 = "voices/audio.mp3"
             os.remove(file_mp3)
 
+            print(ex)
             return 'Сделай вид, что ты меня не понял и попроси повторить'
 
-    except:
+    except Exception as ex:
         try:
             file_mp3 = "voices/audio.mp3"
             os.remove(file_mp3)
+            print(ex)
             return 'Сделай вид, что ты меня не понял и попроси повторить'
-        except:
+        except Exception as ex:
+            print(ex)
             return 'Сделай вид, что ты меня не понял и попроси повторить'
         try:
             file_ogg = "voices/audio.ogg"
             os.remove(file_ogg)
             return 'Сделай вид, что ты меня не понял и попроси повторить'
-        except:
+        except Exception as ex:
+            print(ex)
             return 'Сделай вид, что ты меня не понял и попроси повторить'
